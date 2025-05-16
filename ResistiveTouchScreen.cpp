@@ -48,6 +48,36 @@ void ResistiveTouchScreen::getTouchingPoint(uint16_t* x, uint16_t* y) {
 
 }
 
+void ResistiveTouchScreen::getTouchingPointNoBlocking(uint16_t* x, uint16_t* y) {
+  int16_t xTmp[_filterCycles];
+  int16_t yTmp[_filterCycles];
+  for(int i = 0; i < _filterCycles; ++i) {
+    getRawTouchingPoint(&xTmp[i], &yTmp[i]);
+    if((xTmp[i] == -1) || (yTmp[i] == -1)) { 
+      x = -1;
+      y = -1;
+      return;
+    }
+    if(i != 0 && ((abs(xTmp[i-1]-xTmp[i]) + abs(yTmp[i-1]-yTmp[i])) > _filterMaxAllowableDrift)) {
+      x = -1;
+      y = -1;
+      return;
+    }
+  }
+
+  *x = 0;
+  *y = 0;
+
+  for(int i = 0; i < _filterCycles; ++i) {
+    *x += xTmp[i];
+    *y += yTmp[i];
+  }
+
+  *x /= _filterCycles;
+  *y /= _filterCycles;
+
+}
+
 void ResistiveTouchScreen::getRawTouchingPoint(int16_t* x, int16_t* y) {
   int16_t xRaw = -1;
   int16_t yRaw = -1;
